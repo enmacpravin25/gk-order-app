@@ -15,7 +15,7 @@ textarea{min-height:64px}label{display:block;font-size:13px;color:var(--mut);mar
 .login{max-width:400px;margin:24px auto}.login h2{color:var(--maroon);margin:0 0 6px}.msg{font-size:13px;color:var(--mut);margin:8px 0}.err{color:#c62828}
 .row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.wrapr{flex-wrap:wrap}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.chips button{flex:0 0 auto;background:#fff;color:var(--plum);border:1px solid var(--gold);border-radius:22px;min-height:40px;padding:6px 14px}
-.chips button.on{background:var(--plum);color:var(--gold);border-color:var(--plum)}
+.grp button{min-height:44px}.grp button i{font-style:normal;font-weight:700;margin-left:6px;opacity:.8}.chips button.on{background:var(--plum);color:var(--gold);border-color:var(--plum)}
 .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0}.sum div{background:var(--plum);color:var(--cream);border-radius:10px;padding:6px;text-align:center;font-size:11px}.sum b{display:block;font-size:17px;color:var(--gold)}
 .oc{cursor:pointer}.oc .top{display:flex;justify-content:space-between;gap:6px;align-items:baseline}.ono{font-weight:800;color:var(--maroon)}.amt{font-weight:800;color:var(--plum);white-space:nowrap}
 .oc .nm{font-weight:700;font-size:16px}.meta{font-size:13px;color:var(--mut);margin-top:2px}.its{font-size:13px;margin-top:4px;white-space:pre-line}
@@ -106,9 +106,10 @@ h3{color:var(--maroon);margin:14px 0 6px;font-size:16px}
  <section id="ordersView" class="wrap">
   <div class="chips" id="rng"></div>
   <div class="sum" id="osum"></div>
+  <div class="chips grp" id="grp" role="group" aria-label="Order status group"></div><p class="msg hidden" id="qAll" style="margin:2px 0 6px">Searching all orders (open, delivered and cancelled)</p>
   <input type="search" id="q" placeholder="Search name, phone, order no…" aria-label="Search">
   <div class="chips" style="margin-top:6px"><button id="ftog">Filters ▾</button><button id="reload">↻ Refresh</button></div>
-  <div id="filters" class="grid2 hidden"><select id="fStatus" aria-label="Status"></select><select id="fSource" aria-label="Source"></select><select id="fBranch" aria-label="Branch"><option value="">All branches</option><option>Coimbatore</option><option>Chennai</option></select><select id="fPay" aria-label="Payment"></select><select id="fAck" aria-label="Acknowledgement"><option value="">All (ack)</option><option value="no">Unacknowledged</option><option value="yes">Acknowledged</option></select></div>
+  <div id="filters" class="grid2 hidden"><select id="fStatus" aria-label="Open status"></select><select id="fSource" aria-label="Source"></select><select id="fBranch" aria-label="Branch"><option value="">All branches</option><option>Coimbatore</option><option>Chennai</option></select><select id="fPay" aria-label="Payment"></select><select id="fAck" aria-label="Acknowledgement"><option value="">All (ack)</option><option value="no">Unacknowledged</option><option value="yes">Acknowledged</option></select></div>
   <div id="olist"></div>
  </section>
  <section id="newView" class="wrap hidden">
@@ -277,19 +278,26 @@ function go(v){$$("nav.tabs button").forEach(b=>b.classList.toggle("on",b.datase
  if(v==="prodView")renderProd();if(v==="delView")renderDel();window.scrollTo(0,0)}
 
 /* ---------- orders list ---------- */
-let RANGE="all";const RANGES=[["today","Today"],["tomorrow","Tomorrow"],["week","Next 7 days"],["all","All"]];
+let RANGE="all";const CLOSED=["Delivered","Cancelled"],GROUPS=[["open","Open"],["Delivered","Delivered"],["Cancelled","Cancelled"],["all","All"]];
+/* status group (2026-11-04): Open = every non-delivered/cancelled status (default); Delivered / Cancelled / All. Saved in localStorage gkOrdersGroup.
+   #fStatus narrows within Open only. A search (#q) looks across all statuses and shows "Searching all orders". */
+let GROUP=(()=>{try{const g=localStorage.getItem("gkOrdersGroup");return GROUPS.some(x=>x[0]===g)?g:"open"}catch(e){return"open"}})();
+const inGroup=(o,g)=>g==="all"?true:g==="open"?!CLOSED.includes(o.status):o.status===g;
+function renderGrp(base){$("#grp").innerHTML=GROUPS.map(([k,t])=>`<button type="button" data-g="${k}" class="${k===GROUP?"on":""}" aria-pressed="${k===GROUP}">${t}<i>${base.filter(o=>inGroup(o,k)).length}</i></button>`).join("");$("#fStatus").disabled=GROUP!=="open"}
+$("#grp").onclick=e=>{const b=e.target.closest("button");if(!b)return;GROUP=b.dataset.g;try{localStorage.setItem("gkOrdersGroup",GROUP)}catch(x){}if(GROUP!=="open")$("#fStatus").value="";renderList()};const RANGES=[["today","Today"],["tomorrow","Tomorrow"],["week","Next 7 days"],["all","All"]];
 function setupFilters(){$("#rng").innerHTML=RANGES.map(([k,t])=>`<button data-r="${k}" class="${k===RANGE?"on":""}">${t}</button>`).join("");
- $("#fStatus").innerHTML='<option value="">All statuses</option><option value="active">Active (not delivered/cancelled)</option>'+INIT.statuses.map(s=>`<option>${esc(s)}</option>`).join("");
+ $("#fStatus").innerHTML='<option value="">All open statuses</option>'+INIT.statuses.filter(s=>!CLOSED.includes(s)).map(s=>`<option>${esc(s)}</option>`).join("");
  $("#fSource").innerHTML='<option value="">All sources</option>'+INIT.sources.map(s=>`<option>${esc(s)}</option>`).join("");
  $("#fPay").innerHTML='<option value="">All payments</option>'+INIT.payments.map(s=>`<option>${esc(s)}</option>`).join("")}
 $("#rng").onclick=e=>{const b=e.target.closest("button");if(!b)return;RANGE=b.dataset.r;$$("#rng button").forEach(x=>x.classList.toggle("on",x===b));renderList()};
 $("#ftog").onclick=()=>$("#filters").classList.toggle("hidden");$("#reload").onclick=()=>load();
 ["#q","#fStatus","#fSource","#fBranch","#fPay","#fAck"].forEach(s=>$(s).addEventListener("input",()=>renderList()));
 function inRange(o){const t=INIT.today;if(RANGE==="all")return true;if(!o.date)return RANGE!=="tomorrow";if(RANGE==="today")return o.date===t;if(RANGE==="tomorrow")return o.date===addDays(t,1);return o.date>=t&&o.date<=addDays(t,6)}
-function filtered(){const q=$("#q").value.trim().toLowerCase(),qd=q.replace(/\D/g,""),fs=$("#fStatus").value,fo=$("#fSource").value,fb=$("#fBranch").value,fp=$("#fPay").value;
- return ORD.filter(o=>inRange(o)&&(!fs||(fs==="active"?!["Delivered","Cancelled"].includes(o.status):o.status===fs))&&(!fo||o.source===fo)&&(!fb||o.branch===fb)&&(!fp||o.payment===fp)&&(!$("#fAck").value||($("#fAck").value==="no")===!o.ackChannel)&&
+function filtered(){const q=$("#q").value.trim().toLowerCase(),qd=q.replace(/\D/g,""),fo=$("#fSource").value,fb=$("#fBranch").value,fp=$("#fPay").value;
+ return ORD.filter(o=>inRange(o)&&(!fo||o.source===fo)&&(!fb||o.branch===fb)&&(!fp||o.payment===fp)&&(!$("#fAck").value||($("#fAck").value==="no")===!o.ackChannel)&&
   (!q||String(o.name||"").toLowerCase().includes(q)||o.no.toLowerCase().includes(q)||(qd.length>=3&&String(o.phone||"").replace(/\D/g,"").includes(qd))))
   .sort((a,b)=>RANGE==="all"?(b.time||0)-(a.time||0):((a.date||"9999")+(a.slot||"")).localeCompare((b.date||"9999")+(b.slot||"")))}
+function statusFiltered(base){const q=$("#q").value.trim(),fs=$("#fStatus").value;if(q)return base;return base.filter(o=>inGroup(o,GROUP)&&(GROUP!=="open"||!fs||o.status===fs))}
 const sCls=s=>"s-"+String(s).split(" ")[0],pCls=p=>"p-"+String(p).split(" ")[0];
 const waNum=p=>{const d=String(p).replace(/\D/g,"");return d.length===10?"91"+d:d};
 const totTxt=o=>o.lines.length&&o.tbc===o.lines.length?"Price TBC":inr(o.total)+(o.tbc?" + TBC":"");
@@ -300,7 +308,7 @@ function card(o){return `<div class="card oc" data-o="${esc(o.no)}"><div class="
  <div><span class="chip ${sCls(o.status)}">${esc(o.status)}</span><span class="chip ${pCls(o.payment)}">${esc(o.payment)}${o.paymentMode?" · "+esc(o.paymentMode):""}</span>${o.tbc?'<span class="chip tbc">Price TBC</span>':""}${!o.ackChannel&&o.status!=="Cancelled"?'<span class="chip unack" style="background:#e3f2fd;color:#0d47a1">Unacknowledged</span>':""}<span class="chip src">${esc(o.source)}</span><span class="chip src">${esc(o.branch)}</span>${o.salesperson?`<span class="chip src">👤 ${esc(o.salesperson)}</span>`:""}</div>
  ${o.notes?`<div class="nhl onote">📝 ${esc(o.notes)}</div>`:""}
  ${hasPh(o)?`<div class="links"><a class="call" href="tel:${esc(o.phone.replace(/[^\d+]/g,""))}" data-stop="1">📞 Call</a><a class="wa" href="https://wa.me/${waNum(o.phone)}" target="_blank" rel="noopener" data-stop="1">WhatsApp</a></div>`:""}</div>`}
-function renderList(){const L=filtered();$("#osum").innerHTML=sumBox(L);$("#olist").innerHTML=L.length?L.map(card).join(""):'<p class="msg" style="text-align:center">No orders match.</p>'}
+function renderList(){const B=filtered();renderGrp(B);$("#qAll").classList.toggle("hidden",!$("#q").value.trim());const L=statusFiltered(B);$("#osum").innerHTML=sumBox(L);$("#olist").innerHTML=L.length?L.map(card).join(""):'<p class="msg" style="text-align:center">No orders match.</p>'}
 $("#olist").onclick=e=>{if(e.target.closest("[data-stop]"))return;const c=e.target.closest("[data-o]");if(c)openDetail(c.dataset.o)};
 
 /* ---------- order detail ---------- */
@@ -538,7 +546,7 @@ try{(function(){const MQ=window.matchMedia("(min-width:900px)"),isDesk=()=>MQ.ma
  const ack=o=>o.ackChannel?'<span class="chip p-Paid">✓ '+esc(o.ackChannel)+"</span>":o.status==="Cancelled"?"—":'<span class="chip unack" style="background:#e3f2fd;color:#0d47a1">No</span>';
  const sumIt=o=>o.lines.map(l=>l.breakup?comboShort(l):l.item+" "+(gramsOf(l.unit)!==null?l.unit+(l.qty>1?"×"+l.qty:""):l.qty+" "+l.unit.replace(/\s*\(price TBC\)/i,""))+(l.tbc?" (TBC)":"")).join(", ");
  const sumItL=o=>o.lines.map(l=>l.breakup?comboShort(l):l.item+" "+(gramsOf(l.unit)!==null?l.unit+(l.qty>1?"×"+l.qty:""):l.qty+" "+l.unit.replace(/\s*\(price TBC\)/i,""))+(l.tbc?" (TBC)":""));   // t116u: one item per line
- function deskTable(){const L=filtered();if(!L.length)return;const sel=CUR&&!$("#detail").classList.contains("hidden")?CUR.no:"";
+ function deskTable(){const L=statusFiltered(filtered());if(!L.length)return;const sel=CUR&&!$("#detail").classList.contains("hidden")?CUR.no:"";
   $("#olist").innerHTML=`<table class="otab"><thead><tr><th>Order</th><th>Date</th><th>Name</th><th>Phone</th><th>Items</th><th class="n">Total</th><th>Status</th><th>Payment</th><th>Ack</th></tr></thead><tbody>${L.map(o=>`<tr class="oc${o.no===sel?" sel":""}" data-o="${esc(o.no)}" tabindex="0"><td><b class="ono">${esc(o.no)}</b><br><small>${esc(o.branch)}</small></td><td>${dTxt(o)}${o.slot?"<br><small>"+esc(o.slot)+"</small>":""}<br><small>${o.delivery?"🛵":"🏬"} ${esc(o.source)}</small></td><td><b>${nmH(o)}</b></td><td>${String(o.phone||"").trim()?esc(o.phone):'<small class="nophone">— no phone</small>'}</td><td class="it">${sumItL(o).map(t=>`<div class="itl">${esc(t)}</div>`).join("")}${o.lines.filter(l=>l.note).map(l=>`<br><span class="nhl">📝 ${esc(l.item)}: ${esc(l.note)}</span>`).join("")}</td><td class="n"><b>${totTxt(o)}</b></td><td><span class="chip ${sCls(o.status)}">${esc(o.status)}</span></td><td><span class="chip ${pCls(o.payment)}">${esc(o.payment)}</span></td><td>${ack(o)}</td></tr>`).join("")}</tbody></table>`}
  const _rl=renderList;renderList=function(){_rl();if(isDesk())try{deskTable()}catch(err){_rl()}};
  $("#olist").addEventListener("keydown",e=>{if(isDesk()&&e.key==="Enter"&&e.target.dataset&&e.target.dataset.o){e.preventDefault();openDetail(e.target.dataset.o)}});
