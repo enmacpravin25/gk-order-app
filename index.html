@@ -24,8 +24,8 @@ textarea{min-height:64px}label{display:block;font-size:13px;color:var(--mut);mar
 .p-Pending{background:#fff3cd;color:#8a6d00}.p-Paid{background:#d6f5d6;color:#1b5e20}.p-Partially{background:#ffe0b2;color:#8a4b00}.tbc{background:#fde2e2;color:#a01010}.src{background:#f3e8db;color:var(--plum)}
 .links{display:flex;gap:8px;margin-top:8px}.links a{flex:1;text-align:center;text-decoration:none;border-radius:10px;padding:10px;min-height:44px;font-weight:700}
 .call{background:var(--plum);color:var(--gold)}.wa{background:#25d366;color:#053}
-nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--plum);display:grid;grid-template-columns:repeat(4,1fr);border-top:3px solid var(--gold);z-index:30;padding-bottom:env(safe-area-inset-bottom)}
-nav.tabs button{background:transparent;color:var(--cream);border-radius:0;min-height:60px;font-size:12px;padding:4px}nav.tabs button b{display:block;font-size:20px}nav.tabs button.on{color:var(--gold);background:#5c2348}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--plum);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:3px solid var(--gold);z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{background:transparent;color:var(--cream);border-radius:0;min-height:60px;font-size:12px;padding:4px 2px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}nav.tabs button b{display:block;font-size:20px}nav.tabs button.on{color:var(--gold);background:#5c2348}
 .sheet{position:fixed;inset:0;background:var(--cream);z-index:40;overflow-y:auto;padding-bottom:30px}body:has(#testbar) .sheet{top:29px}body.d-open{overflow:hidden}
 .fe label{margin-top:8px}.fe .ro{font-size:13px;color:var(--mut);margin:6px 0}.fe textarea{min-height:60px}.fe .acts{display:flex;gap:8px;margin-top:12px;position:sticky;bottom:0;background:#fff;padding:8px 0}.fe .acts button{flex:1}#dEdit{float:right;margin:0 0 6px 8px}
 .sheet .bar{position:sticky;top:0;background:var(--plum);color:var(--gold);display:flex;align-items:center;gap:8px;padding:8px;z-index:2}.sheet .bar button{background:transparent;border:1px solid var(--gold);color:var(--gold)}
@@ -137,6 +137,11 @@ h3{color:var(--maroon);margin:14px 0 6px;font-size:16px}
   <div class="ph"><b>House of Seerbakshanam GK – Production</b></div>
   <div class="sum" id="psum"></div><div class="card" id="ptable"></div><button class="printbtn noprint" id="pPrint">🖨 Print production list</button>
  </section>
+ <section id="packView" class="wrap hidden">
+  <div class="card noprint"><div class="grid2"><div><label for="kDate">Date</label><div class="dnav"><button type="button" class="dnb" data-dn="kDate" data-step="-1" aria-label="Previous day" title="Previous day"><!-- t128u svg chevron --><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button><input type="date" id="kDate"><button type="button" class="dnb" data-dn="kDate" data-step="1" aria-label="Next day" title="Next day"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></button><button type="button" class="dnt" data-dn="kDate" data-step="0">Today</button></div></div><div><label for="kBranch">Branch</label><select id="kBranch"><option value="">Both</option><option>Coimbatore</option><option>Chennai</option></select></div></div></div>
+  <div class="ph"><b>House of Seerbakshanam GK – Packing</b></div>
+  <div class="sum" id="ksum"></div><div class="card" id="ktable"></div><button class="printbtn noprint" id="kPrint">🖨 Print packing list</button>
+ </section>
  <section id="delView" class="wrap hidden">
   <div class="card noprint"><div class="grid2"><div><label for="dDate">Date</label><div class="dnav"><button type="button" class="dnb" data-dn="dDate" data-step="-1" aria-label="Previous day" title="Previous day"><!-- t128u svg chevron --><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button><input type="date" id="dDate"><button type="button" class="dnb" data-dn="dDate" data-step="1" aria-label="Next day" title="Next day"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></button><button type="button" class="dnt" data-dn="dDate" data-step="0">Today</button></div></div><div><label for="dBranch">Branch</label><select id="dBranch"><option value="">Both</option><option>Coimbatore</option><option>Chennai</option></select></div></div></div>
   <div class="ph"><b>House of Seerbakshanam GK – Deliveries &amp; pickups</b></div>
@@ -144,7 +149,7 @@ h3{color:var(--maroon);margin:14px 0 6px;font-size:16px}
  </section>
 </main>
 <div id="detail" class="sheet hidden"></div><div id="comboSheet" class="sheet hidden"></div><div id="niSheet" class="sheet hidden"></div>
-<nav class="tabs hidden" id="tabs"><button data-v="ordersView" class="on"><b>📋</b>Orders</button><button data-v="newView"><b>➕</b>New</button><button data-v="prodView"><b>🍬</b>Production</button><button data-v="delView"><b>🛵</b>Deliveries</button></nav>
+<nav class="tabs hidden" id="tabs"><button data-v="ordersView" class="on"><b>📋</b>Orders</button><button data-v="newView"><b>➕</b>New</button><button data-v="prodView"><b>🍬</b>Production</button><button data-v="packView"><b>📦</b>Packing</button><button data-v="delView"><b>🛵</b>Deliveries</button></nav>
 <script>
 /* ===== CONFIG: paste the GK Order App API web-app /exec URL here after deploying ===== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxgQIJNqQ2HGlFuZwIUxMkLYRn3w91Xy8FyT98rbqtW6PK-1BCj0CGaI15Jc-JDOsdtZw/exec';
@@ -269,13 +274,13 @@ $("#lo").onclick=()=>logout(false);
 async function start(){if(!S||Date.now()>S.exp)return logout(true,S?"Session expired – please log in again.":"");lmsg("Loading…");const r=await authApi({action:"init"});if(!r.ok){if(S)lmsg("Could not load: "+r.error,1);return}
  INIT=r;if(r.expiresAt&&r.expiresAt!==S.exp){S.exp=r.expiresAt;saveS()}$("#login").classList.add("hidden");["#app","#tabs","#lo"].forEach(s=>$(s).classList.remove("hidden"));$("#whoami").textContent=r.email+" · "+r.role+(MB()?" · "+MB()+" branch":"");
  clearTimeout(expT);expT=setTimeout(()=>{if(S&&Date.now()>=S.exp)logout(false,"Session expired – please log in again.");else start()},Math.min(MAXT,Math.max(0,S.exp-Date.now())));
- setupFilters();applyBranch();setupNew();$("#pDate").value=$("#dDate").value=r.today;await load()}
-async function load(){const r=await authApi({action:"listOrders"});if(!S||!INIT)return;if(!r.ok)return toast("Could not load orders: "+r.error);ORD=r.orders;INIT.today=r.today||INIT.today;renderList();if(!$("#prodView").classList.contains("hidden"))renderProd();if(!$("#delView").classList.contains("hidden"))renderDel()}
+ setupFilters();applyBranch();setupNew();$("#pDate").value=$("#kDate").value=$("#dDate").value=r.today;await load()}
+async function load(){const r=await authApi({action:"listOrders"});if(!S||!INIT)return;if(!r.ok)return toast("Could not load orders: "+r.error);ORD=r.orders;INIT.today=r.today||INIT.today;renderList();if(!$("#prodView").classList.contains("hidden"))renderProd();if(!$("#packView").classList.contains("hidden"))renderPack();if(!$("#delView").classList.contains("hidden"))renderDel()}
 
 /* ---------- navigation ---------- */
 $$("nav.tabs button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){$$("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));["ordersView","newView","prodView","delView"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==v));
- if(v==="prodView")renderProd();if(v==="delView")renderDel();window.scrollTo(0,0)}
+function go(v){$$("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));["ordersView","newView","prodView","packView","delView"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==v));
+ if(v==="prodView")renderProd();if(v==="packView")renderPack();if(v==="delView")renderDel();window.scrollTo(0,0)}
 
 /* ---------- orders list ---------- */
 let RANGE="all";const CLOSED=["Delivered","Cancelled"],GROUPS=[["open","Open"],["Delivered","Delivered"],["Cancelled","Cancelled"],["all","All"]];
@@ -442,7 +447,7 @@ $("#detail").addEventListener("click",async e=>{const b=e.target.closest("button
 const NEW={source:"WhatsApp",branch:"Coimbatore",type:"pickup",cart:[],sel:null,edit:null};
 /* branch manager (role manager + Branch): only their branch – server enforces too (forbidden_branch) */
 const MB=()=>INIT&&INIT.role==="manager"&&INIT.branch||"";
-function applyBranch(){const b=MB();["#fBranch","#pBranch","#dBranch"].forEach(id=>{const el=$(id);if(!el)return;el.value=b;(el.closest("div")&&el.closest("div").querySelector("label")&&id!=="#fBranch"?el.closest("div"):el).classList.toggle("hidden",!!b)});
+function applyBranch(){const b=MB();["#fBranch","#pBranch","#kBranch","#dBranch"].forEach(id=>{const el=$(id);if(!el)return;el.value=b;(el.closest("div")&&el.closest("div").querySelector("label")&&id!=="#fBranch"?el.closest("div"):el).classList.toggle("hidden",!!b)});
  $("#nBranch").classList.toggle("hidden",!!b);const lb=$("#nBranch").previousElementSibling;if(lb&&lb.tagName==="LABEL")lb.classList.toggle("hidden",!!b);if(b)NEW.branch=b;else if(!INIT.branches||INIT.branches.indexOf(NEW.branch)<0)NEW.branch="Coimbatore"}
 function seg(el,opts,key,cb){$(el).innerHTML=opts.map(([v,t])=>`<button type="button" data-v="${esc(v)}" class="${NEW[key]===v?"on":""}">${esc(t)}</button>`).join("");$(el).onclick=e=>{const b=e.target.closest("button");if(!b)return;NEW[key]=b.dataset.v;$$(el+" button").forEach(x=>x.classList.toggle("on",x===b));cb&&cb()}}
 function setupNew(){seg("#nSource",["WhatsApp","Phone","Walk-in","Other"].map(x=>[x,x]),"source");
@@ -508,15 +513,20 @@ $("#nSave").onclick=async()=>{const m=(t,e)=>{$("#nMsg").textContent=t;$("#nMsg"
  NEW.cart=[];NEW.edit=null;NEW.sel=null;renderCfg();["#nName","#nPhone","#nAddr","#nArea","#nPin","#nSlot","#nNotes","#nEmail"].forEach(s=>$(s).value="");renderCart();await load()};
 
 /* ---------- production + deliveries ---------- */
-["#pDate","#pBranch"].forEach(s=>$(s).addEventListener("input",renderProd));["#dDate","#dBranch"].forEach(s=>$(s).addEventListener("input",renderDel));
-$("#pPrint").onclick=$("#dPrint").onclick=()=>window.print();
+["#pDate","#pBranch"].forEach(s=>$(s).addEventListener("input",renderProd));["#dDate","#dBranch"].forEach(s=>$(s).addEventListener("input",renderDel));["#kDate","#kBranch"].forEach(s=>$(s).addEventListener("input",renderPack));
+$("#pPrint").onclick=$("#kPrint").onclick=$("#dPrint").onclick=()=>window.print();
 /* t115u: production as one row per order line: Order no | Customer | Item | Wt | Qty (combos expanded, "incl. 🎁 name") */
+/* packing: delivery/pickup info from already-loaded ORD (no backend change) */
+function packInfo(no){const o=(ORD||[]).find(z=>String(z.no)===String(no));if(!o)return"";const t=o.delivery?"🛵 Delivery"+(o.area?" · "+o.area:"")+(o.pin?" · "+o.pin:""):"🏬 Pickup"+(o.address?" – "+o.address:"");return'<br><small class="msg pinfo">'+esc(t+(o.slot?" · "+o.slot:""))+"</small>"}
 function prodLinesHtml(r){const L=(r.lines||[]).slice().sort((a,b)=>String(a.no).localeCompare(String(b.no)));/* t128u: one tbody per order, Order no + Customer rowspan-merged */
  const G=[];L.forEach(x=>{const k=String(x.no);if(!G.length||G[G.length-1].k!==k)G.push({k,a:[]});G[G.length-1].a.push(x)});
- return `<table id="prodTable" class="ptab plines"><thead><tr><th>Order no</th><th>Customer</th><th>Item</th><th>Wt</th><th class="n">Qty</th></tr></thead>${G.map(gr=>`<tbody class="pgrp" data-no="${esc(gr.k)}">${gr.a.map((x,i)=>{const g=gramsOf(x.wt);return`<tr>${i?"":`<td class="pno" rowspan="${gr.a.length}">${esc(x.no)}</td><td class="pcu" rowspan="${gr.a.length}">${esc(x.customer||"")}</td>`}<td>${esc(x.item)}${x.combo?'<br><small class="msg">incl. 🎁 '+esc(x.combo)+"</small>":""}${x.note?'<br><span class="nhl">📝 '+esc(x.note)+"</span>":""}</td><td class="pwt">${g!==null?esc(x.wt):esc(String(x.wt||"").replace(/\s*\(price TBC\)/i," (TBC)"))}</td><td class="n"><b>${esc(String(x.qty))}</b></td></tr>`}).join("")}</tbody>`).join("")}</table>`}
+ return `<table id="packTable" class="ptab plines"><thead><tr><th>Order no</th><th>Customer</th><th>Item</th><th>Wt</th><th class="n">Qty</th></tr></thead>${G.map(gr=>`<tbody class="pgrp" data-no="${esc(gr.k)}">${gr.a.map((x,i)=>{const g=gramsOf(x.wt);return`<tr>${i?"":`<td class="pno" rowspan="${gr.a.length}">${esc(x.no)}</td><td class="pcu" rowspan="${gr.a.length}">${esc(x.customer||"")}${packInfo(x.no)}</td>`}<td>${esc(x.item)}${x.combo?'<br><small class="msg">incl. 🎁 '+esc(x.combo)+"</small>":""}${x.note?'<br><span class="nhl">📝 '+esc(x.note)+"</span>":""}</td><td class="pwt">${g!==null?esc(x.wt):esc(String(x.wt||"").replace(/\s*\(price TBC\)/i," (TBC)"))}</td><td class="n"><b>${esc(String(x.qty))}</b></td></tr>`}).join("")}</tbody>`).join("")}</table>`}
 async function renderProd(){if(!INIT)return;const d=$("#pDate").value||INIT.today,b=$("#pBranch").value;const list=ORD.filter(o=>o.date===d&&(!b||o.branch===b));$("#psum").innerHTML=sumBox(list);
  const r=await authApi({action:"production",date:d,branch:b});if(!r.ok){$("#ptable").innerHTML='<p class="msg err">Could not load: '+esc(r.error)+"</p>";return}
- $("#ptable").innerHTML=`<h3 style="margin-top:0">Production for ${fmtD(d)}${b?" · "+esc(b):""} – ${r.orders} active orders</h3>`+(r.rows.length?/* t128u totals first */`<h3 class="ptot">Total by item</h3><table id="prodTotals" class="ptab"><tr><th>Item</th><th class="n">Total</th><th>Orders</th></tr>${r.rows.map(x=>`<tr><td>${esc(x.item)}${x.combos?'<br><small class="msg">incl. 🎁 '+esc(x.combos.join(", "))+"</small>":""}</td><td class="n"><b>${x.unit==="kg"?x.kg+" kg":x.qty+" "+esc(x.unit)}</b></td><td><small>${esc(x.orders.join(", "))}</small></td></tr>`).join("")}</table><h3 class="ptot">By order</h3>`+prodLinesHtml(r):'<p class="msg">Nothing to produce for this date.</p>')}
+ $("#ptable").innerHTML=`<h3 style="margin-top:0">Production for ${fmtD(d)}${b?" · "+esc(b):""} – ${r.orders} active orders</h3>`+(r.rows.length?/* t128u totals first */`<h3 class="ptot">Total by item</h3><table id="prodTotals" class="ptab"><tr><th>Item</th><th class="n">Total</th><th>Orders</th></tr>${r.rows.map(x=>`<tr><td>${esc(x.item)}${x.combos?'<br><small class="msg">incl. 🎁 '+esc(x.combos.join(", "))+"</small>":""}</td><td class="n"><b>${x.unit==="kg"?x.kg+" kg":x.qty+" "+esc(x.unit)}</b></td><td><small>${esc(x.orders.join(", "))}</small></td></tr>`).join("")}</table>`:'<p class="msg">Nothing to produce for this date.</p>')}
+async function renderPack(){if(!INIT)return;const d=$("#kDate").value||INIT.today,b=$("#kBranch").value;const list=ORD.filter(o=>o.date===d&&(!b||o.branch===b));$("#ksum").innerHTML=sumBox(list);
+ const r=await authApi({action:"production",date:d,branch:b});if(!r.ok){$("#ktable").innerHTML='<p class="msg err">Could not load: '+esc(r.error)+"</p>";return}
+ $("#ktable").innerHTML=`<h3 style="margin-top:0">Packing for ${fmtD(d)}${b?" · "+esc(b):""} – ${r.orders} active orders</h3>`+((r.lines||[]).length?prodLinesHtml(r):'<p class="msg">Nothing to pack for this date.</p>')}
 function renderDel(){if(!INIT)return;const d=$("#dDate").value||INIT.today,b=$("#dBranch").value;const list=ORD.filter(o=>o.date===d&&o.status!=="Cancelled"&&(!b||o.branch===b));$("#dsum").innerHTML=sumBox(list);
  const g={};list.forEach(o=>{const k=o.delivery?"🛵 "+(o.pin||"No PIN")+(o.area?" · "+o.area:""):"🏬 Pickup – "+o.address;(g[k]=g[k]||[]).push(o)});
  const keys=Object.keys(g).sort((a,b)=>(a[0]==="🏬")-(b[0]==="🏬")||a.localeCompare(b));
