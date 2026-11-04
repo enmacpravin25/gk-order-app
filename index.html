@@ -89,6 +89,10 @@ h3{color:var(--maroon);margin:14px 0 6px;font-size:16px}
 /* t116u: orders table – narrow wrapping Items column, order no never breaks */
 .otab{table-layout:auto}.otab td.it{max-width:300px;min-width:160px;width:300px;white-space:normal;overflow-wrap:anywhere;word-break:normal}.otab td.it .itl{white-space:normal;line-height:1.3}
 .otab th:first-child,.otab td:first-child,.otab .ono{white-space:nowrap}.otab th:nth-child(2),.otab td:nth-child(2){min-width:100px}.otab td:nth-child(2){white-space:normal}
+/* t157u Sales tab (owner/admin only) */nav.tabs.t6{grid-template-columns:repeat(6,minmax(0,1fr))}nav.tabs.t6 button{font-size:11px;padding:4px 1px}nav.tabs .ls{display:none}@media(max-width:600px){nav.tabs.t6 .lf{display:none}nav.tabs.t6 .ls{display:inline}}
+#salesView .seg button{min-height:40px}#salesView .scap{font-size:12px;color:#5a4630;margin:6px 0 0}.skpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:6px 0}.skpi div{background:var(--plum);color:var(--cream);border-radius:10px;padding:8px;text-align:center;font-size:12px;min-width:0}.skpi b{display:block;font-size:18px;color:var(--gold);overflow-wrap:anywhere}.skpi div:first-child{grid-column:1/-1}@media(min-width:900px){.skpi{grid-template-columns:repeat(5,minmax(0,1fr))}.skpi div:first-child{grid-column:auto}.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sgrid>.card{margin:0}}
+.stab{width:100%;border-collapse:collapse;font-size:13px}.stab th,.stab td{padding:6px 4px;border-bottom:1px solid #eadfc8;text-align:left}.stab .n{text-align:right;white-space:nowrap}.stab tfoot td{font-weight:700;border-top:2px solid var(--gold)}.snote{font-size:12px;color:#7a5a3a;margin:4px 0}#sRange.hidden{display:none!important}
+@media print{#salesView .skpi div{background:#fff;color:#000;border:1px solid #999}#salesView .skpi b{color:#000}}
 </style></head><body>
 <div id="mockbar" class="mock hidden">DEMO MODE – fake data, nothing is saved</div>
 <header><img src="logo.webp" alt="GK"><div><h1>GK Orders</h1><small id="whoami">House of Seerbakshanam GK</small></div><span class="sp"></span><button id="lo" class="hidden">Log out</button></header>
@@ -147,6 +151,15 @@ h3{color:var(--maroon);margin:14px 0 6px;font-size:16px}
   <div class="card noprint"><div class="grid2 dng"><div><label for="dDate">Date</label><div class="dnav"><button type="button" class="dnb" data-dn="dDate" data-step="-1" aria-label="Previous day" title="Previous day"><!-- t128u svg chevron --><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button><input type="date" id="dDate"><button type="button" class="dnb" data-dn="dDate" data-step="1" aria-label="Next day" title="Next day"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></button><button type="button" class="dnt" data-dn="dDate" data-step="0">Today</button></div></div><div><label for="dBranch">Branch</label><select id="dBranch"><option value="">Both</option><option>Coimbatore</option><option>Chennai</option></select></div></div></div>
   <div class="ph"><b>House of Seerbakshanam GK – Deliveries &amp; pickups</b></div>
   <div class="sum" id="dsum"></div><div id="dlist"></div><button class="printbtn noprint" id="dPrint">🖨 Print delivery list</button>
+ </section>
+ <section id="salesView" class="wrap hidden">
+  <div class="card noprint" id="sCtl"><label>Period</label><div class="seg" id="sPre"></div>
+   <div class="dnav" style="margin-top:6px"><button type="button" class="dnb" id="sPrev" aria-label="Previous period" title="Previous period"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg></button><b id="sLbl" style="flex:1;text-align:center;align-self:center;min-width:0">–</b><button type="button" class="dnb" id="sNext" aria-label="Next period" title="Next period"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg></button></div>
+   <div class="grid2 dng hidden" id="sRange" style="margin-top:6px"><div><label for="sFrom">From</label><input type="date" id="sFrom"></div><div><label for="sTo">To</label><input type="date" id="sTo"></div></div>
+   <label style="margin-top:6px">Date basis</label><div class="seg" id="sBasis"></div>
+   <p class="scap" id="sCap"></p></div>
+  <div class="ph"><b>House of Seerbakshanam GK – Sales summary</b></div>
+  <div id="sBody"></div><button class="printbtn noprint" id="sPrint">🖨 Print sales summary</button>
  </section>
 </main>
 <div id="detail" class="sheet hidden"></div><div id="comboSheet" class="sheet hidden"></div><div id="niSheet" class="sheet hidden"></div>
@@ -275,13 +288,13 @@ $("#lo").onclick=()=>logout(false);
 async function start(){if(!S||Date.now()>S.exp)return logout(true,S?"Session expired – please log in again.":"");lmsg("Loading…");const r=await authApi({action:"init"});if(!r.ok){if(S)lmsg("Could not load: "+r.error,1);return}
  INIT=r;if(r.expiresAt&&r.expiresAt!==S.exp){S.exp=r.expiresAt;saveS()}$("#login").classList.add("hidden");["#app","#tabs","#lo"].forEach(s=>$(s).classList.remove("hidden"));$("#whoami").textContent=r.email+" · "+r.role+(MB()?" · "+MB()+" branch":"");
  clearTimeout(expT);expT=setTimeout(()=>{if(S&&Date.now()>=S.exp)logout(false,"Session expired – please log in again.");else start()},Math.min(MAXT,Math.max(0,S.exp-Date.now())));
- setupFilters();applyBranch();setupNew();$("#pDate").value=$("#kDate").value=$("#dDate").value=r.today;await load()}
-async function load(){const r=await authApi({action:"listOrders"});if(!S||!INIT)return;if(!r.ok)return toast("Could not load orders: "+r.error);ORD=r.orders;INIT.today=r.today||INIT.today;renderList();if(!$("#prodView").classList.contains("hidden"))renderProd();if(!$("#packView").classList.contains("hidden"))renderPack();if(!$("#delView").classList.contains("hidden"))renderDel()}
+ setupFilters();applyBranch();salesTabUi();setupNew();$("#pDate").value=$("#kDate").value=$("#dDate").value=r.today;await load()}
+async function load(){const r=await authApi({action:"listOrders"});if(!S||!INIT)return;if(!r.ok)return toast("Could not load orders: "+r.error);ORD=r.orders;INIT.today=r.today||INIT.today;renderList();if(!$("#prodView").classList.contains("hidden"))renderProd();if(!$("#packView").classList.contains("hidden"))renderPack();if(!$("#delView").classList.contains("hidden"))renderDel();if(!$("#salesView").classList.contains("hidden"))renderSales()}
 
 /* ---------- navigation ---------- */
 $$("nav.tabs button").forEach(b=>b.onclick=()=>go(b.dataset.v));
-function go(v){$$("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));["ordersView","newView","prodView","packView","delView"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==v));
- if(v==="prodView")renderProd();if(v==="packView")renderPack();if(v==="delView")renderDel();window.scrollTo(0,0)}
+function go(v){$$("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));if(v==="salesView"&&!canSales())v="ordersView";["ordersView","newView","prodView","packView","delView","salesView"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==v));$$("nav.tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+ if(v==="prodView")renderProd();if(v==="packView")renderPack();if(v==="delView")renderDel();if(v==="salesView")renderSales();window.scrollTo(0,0)}
 
 /* ---------- orders list ---------- */
 let RANGE="all";const CLOSED=["Delivered","Cancelled"],GROUPS=[["open","Open"],["Delivered","Delivered"],["Cancelled","Cancelled"],["all","All"]];
@@ -871,4 +884,59 @@ document.addEventListener("click",e=>{const b=e.target.closest(".dnav button[dat
  document.addEventListener("focusin",e=>{const t=e.target;if(!t||!INIT)return;if(t.id==="iq"&&t.value.trim())renderPick();if(t.id==="eaQ"&&typeof EDIT!=="undefined"&&EDIT&&!ESEL){const p=$("#ePick");if(p)p.innerHTML=pickQ(t.value,CUR.branch)}});
  document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;const t=e.target;if(t&&t.id==="iq"&&!window.matchMedia("(min-width:900px)").matches){t.value="";renderPick()}if(t&&t.id==="eaQ"){t.value="";EQ="";const p=$("#ePick");if(p)p.innerHTML=""}});
 })();
+
+/* ===== t157u 📊 Sales tab (owner/admin only; client-side from listOrders – no backend change). Cancelled excluded everywhere; Delivered included.
+   Total = order Total (incl. GST). Collected: Paid = total; Partially Paid / Pending = Amount Received (capped at total) if entered. Pending = total − collected.
+   Items: combos expanded into their items (like Production); combo line amount split over its items in proportion to menu rate × qty. */
+const canSales=()=>!!(INIT&&(INIT.role==="owner"||INIT.role==="admin"));
+const SPRE=[["today","Today"],["yday","Yesterday"],["week","This week"],["month","This month"],["custom","Custom"]];
+let SS={pre:"month",basis:"delivery",off:0,from:"",to:""};
+const ymdIST=t=>t?new Date(+t+5.5*36e5).toISOString().slice(0,10):"";
+function salesRange(){const T=INIT.today,k=SS.pre,n=SS.off;if(k==="today"){const d=addDays(T,n);return[d,d]}if(k==="yday"){const d=addDays(T,n-1);return[d,d]}
+ if(k==="week"){const dw=(new Date(T+"T00:00:00Z").getUTCDay()+6)%7,a=addDays(T,-dw+7*n);return[a,addDays(a,6)]}
+ if(k==="month"){const d=new Date(T+"T00:00:00Z");d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+n);const a=d.toISOString().slice(0,10);d.setUTCMonth(d.getUTCMonth()+1);d.setUTCDate(0);return[a,d.toISOString().slice(0,10)]}
+ let a=SS.from||T,b=SS.to||T;if(a>b)[a,b]=[b,a];return[a,b]}
+const sBasisDate=o=>SS.basis==="order"?ymdIST(o.time):(o.date||"");
+function salesPaid(o){const t=+o.total||0,r=o.amountReceived,a=r===""||r==null||isNaN(+r)?null:+r;if(o.payment==="Paid")return t;return a===null?0:Math.max(0,Math.min(t,a))}
+function salesItems(o){const out=[];(o.lines||[]).forEach(l=>{const amt=+l.amount||0;if(!l.breakup){const g=gramsOf(l.unit);out.push({item:l.item,g:g!==null?g*(+l.qty||1):0,pc:g===null?(+l.qty||1):0,u:g!==null?"kg":String(l.unit||"pcs").replace(/\s*\(price TBC\)/i,""),amt});return}
+  const cs=comboExpand([l]),ws=cs.map(c=>{const m=comboComp(c.item,INIT.menu),g=gramsOf(c.unit);if(!m)return 0;const r=rateFor(m.p,o.branch);return g!==null?r*g*(+c.qty||1)/1000:m.u==="kg"?0:r*(+c.qty||0)}),W=ws.reduce((a,b)=>a+b,0);
+  cs.forEach((c,i)=>{const g=gramsOf(c.unit);out.push({item:c.item,g:g!==null?g*(+c.qty||1):0,pc:g===null?(+c.qty||0):0,u:g!==null?"kg":c.unit||"pcs",amt:W>0?amt*ws[i]/W:amt/cs.length,via:l.item})})});return out}
+function salesCompute(orders){const[a,b]=salesRange(),inR=o=>{const d=sBasisDate(o);return d&&d>=a&&d<=b};const all=orders.filter(inR),act=all.filter(o=>o.status!=="Cancelled"),canc=all.length-act.length;
+ const noDate=SS.basis==="delivery"?orders.filter(o=>!o.date&&o.status!=="Cancelled").length:0;
+ const K={total:0,n:act.length,col:0};const grp=f=>{const m={};act.forEach(o=>{const k=f(o)||"—",x=m[k]||(m[k]={k,n:0,t:0,c:0});x.n++;x.t+=+o.total||0;x.c+=salesPaid(o)});return m};
+ act.forEach(o=>{K.total+=+o.total||0;K.col+=salesPaid(o)});K.pend=K.total-K.col;K.aov=K.n?K.total/K.n:0;
+ const br=grp(o=>o.branch),src=grp(o=>o.source||"Website"),day=grp(sBasisDate),pay=grp(o=>o.payment||"Pending");
+ const it={};act.forEach(o=>salesItems(o).forEach(x=>{const k=x.item+"|"+x.u,y=it[k]||(it[k]={item:x.item,u:x.u,g:0,pc:0,amt:0,combo:0});y.g+=x.g;y.pc+=x.pc;y.amt+=x.amt;if(x.via)y.combo=1}));
+ return{a,b,K,canc,noDate,tbc:act.filter(o=>o.tbc).length,br,src,day,pay,items:Object.values(it)}}
+function sTable(id,head,rows,foot){return`<table class="stab" id="${id}"><thead><tr>${head.map((h,i)=>`<th${i?' class="n"':""}>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map((c,i)=>`<td${i?' class="n"':""}>${c}</td>`).join("")}</tr>`).join("")||`<tr><td colspan="${head.length}" class="msg">No sales</td></tr>`}</tbody>${foot?`<tfoot><tr>${foot.map((c,i)=>`<td${i?' class="n"':""}>${c}</td>`).join("")}</tr></tfoot>`:""}</table>`}
+const kgTxt=g=>(+(g/1000).toFixed(3)).toLocaleString("en-IN")+" kg";
+function renderSales(){if(!canSales()){go("ordersView");return}const sv=$("#salesView");
+ $("#sPre").innerHTML=SPRE.map(([k,t])=>`<button type="button" data-sp="${k}" class="${SS.pre===k?"on":""}" aria-pressed="${SS.pre===k}">${t}</button>`).join("");
+ $("#sBasis").innerHTML=[["delivery","Delivery date"],["order","Order date"]].map(([k,t])=>`<button type="button" data-sb="${k}" class="${SS.basis===k?"on":""}" aria-pressed="${SS.basis===k}">${t}</button>`).join("");
+ $("#sRange").classList.toggle("hidden",SS.pre!=="custom");$("#sPrev").disabled=$("#sNext").disabled=SS.pre==="custom";
+ const R=salesCompute(ORD||[]),fd=d=>new Date(d+"T00:00:00Z").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"});
+ if(SS.pre==="custom"){$("#sFrom").value=R.a;$("#sTo").value=R.b}
+ $("#sLbl").textContent=R.a===R.b?fd(R.a):fd(R.a)+" – "+fd(R.b);
+ $("#sCap").textContent=(SS.basis==="delivery"?"Based on the order's delivery / pickup date (same as Production / Deliveries).":"Based on the date the order was placed (IST).")+" Amounts incl. GST. Cancelled orders excluded.";
+ const K=R.K,brs=["Coimbatore","Chennai"].concat(Object.keys(R.br).filter(k=>!["Coimbatore","Chennai"].includes(k))),srcs=(INIT.sources||[]).concat(Object.keys(R.src).filter(k=>!(INIT.sources||[]).includes(k)));
+ const row3=(m,k)=>{const x=m[k]||{n:0,t:0};return[esc(k),x.n,inr(x.t)]},ft=["Total",K.n,inr(K.total)];
+ const byV=R.items.slice().sort((x,y)=>y.amt-x.amt).slice(0,10),kgI=R.items.filter(x=>x.u==="kg").sort((x,y)=>y.g-x.g).slice(0,10),pcI=R.items.filter(x=>x.u!=="kg").sort((x,y)=>y.pc-x.pc).slice(0,10);
+ const qT=x=>x.u==="kg"?kgTxt(x.g):(+x.pc.toFixed(3)).toLocaleString("en-IN")+" "+esc(x.u),nm=x=>esc(x.item)+(x.combo?" 🎁":"");
+ $("#sBody").innerHTML=`<div class="skpi" id="sKpi"><div data-k="total">Total sales<b>${inr(K.total)}</b></div><div data-k="n">Orders<b>${K.n.toLocaleString("en-IN")}</b></div><div data-k="aov">Avg order value<b>${inr(K.aov)}</b></div><div data-k="col">Collected<b>${inr(K.col)}</b></div><div data-k="pend">Pending<b>${inr(K.pend)}</b></div></div>
+ <p class="snote" id="sCanc">🚫 ${R.canc} cancelled order${R.canc===1?"":"s"} in this period excluded.${R.noDate?` ${R.noDate} order${R.noDate===1?"":"s"} without a delivery date not counted.`:""}${R.tbc?` ${R.tbc} order${R.tbc===1?" has":"s have"} price-TBC items (counted at saved amount).`:""}</p>
+ <div class="sgrid"><div class="card"><h3 style="margin-top:0">🏬 By branch</h3>${sTable("sBr",["Branch","Orders","Sales"],brs.map(k=>row3(R.br,k)),ft)}</div>
+ <div class="card"><h3 style="margin-top:0">📣 By source</h3>${sTable("sSrc",["Source","Orders","Sales"],srcs.map(k=>row3(R.src,k)),ft)}</div>
+ <div class="card"><h3 style="margin-top:0">💰 Collected vs pending</h3>${sTable("sPay",["Payment","Orders","Sales","Collected","Pending"],["Paid","Partially Paid","Pending"].concat(Object.keys(R.pay).filter(k=>!["Paid","Partially Paid","Pending"].includes(k))).map(k=>{const x=R.pay[k]||{n:0,t:0,c:0};return[esc(k),x.n,inr(x.t),inr(x.c),inr(x.t-x.c)]}),["Total",K.n,inr(K.total),inr(K.col),inr(K.pend)])}<p class="snote">Paid = full total; Partially Paid / Pending use “Amount received” where entered.</p></div>
+ <div class="card"><h3 style="margin-top:0">📅 By day</h3>${sTable("sDay",["Date","Orders","Sales"],Object.keys(R.day).sort().map(k=>[esc(fmtD(k)),R.day[k].n,inr(R.day[k].t)]),ft)}</div>
+ <div class="card"><h3 style="margin-top:0">🏆 Top items by value</h3>${sTable("sTopV",["Item","Qty","Value"],byV.map(x=>[nm(x),qT(x),inr(x.amt)]))}</div>
+ <div class="card"><h3 style="margin-top:0">⚖️ Top items by quantity</h3>${sTable("sTopKg",["Item (kg)","Qty","Value"],kgI.map(x=>[nm(x),qT(x),inr(x.amt)]))}${sTable("sTopPc",["Item (pcs)","Qty","Value"],pcI.map(x=>[nm(x),qT(x),inr(x.amt)]))}<p class="snote">🎁 = includes combo items: combos are split into their items, value shared by menu rate. Item values are line amounts incl. GST.</p></div></div>`}
+$("#sPre").onclick=e=>{const b=e.target.closest("button");if(!b)return;SS.pre=b.dataset.sp;SS.off=0;if(SS.pre==="custom"&&!SS.from){SS.from=INIT.today.slice(0,8)+"01";SS.to=INIT.today}renderSales()};
+$("#sBasis").onclick=e=>{const b=e.target.closest("button");if(!b)return;SS.basis=b.dataset.sb;renderSales()};
+$("#sPrev").onclick=()=>{SS.off--;renderSales()};$("#sNext").onclick=()=>{SS.off++;renderSales()};
+["#sFrom","#sTo"].forEach(id=>$(id).addEventListener("change",()=>{SS.from=$("#sFrom").value;SS.to=$("#sTo").value;renderSales()}));
+$("#sPrint").onclick=()=>window.print();
+function salesTabUi(){const nav=$("#tabs"),ex=nav.querySelector('[data-v="salesView"]'),on=canSales();
+ const SH={prodView:"Prod.",delView:"Deliver"};$$("nav.tabs button").forEach(b=>{if(SH[b.dataset.v]&&!b.querySelector(".lf")){const t=b.lastChild.textContent;b.lastChild.remove();b.insertAdjacentHTML("beforeend",`<span class="lf">${t}</span><span class="ls">${SH[b.dataset.v]}</span>`)}});
+ if(on&&!ex){const b=document.createElement("button");b.dataset.v="salesView";b.innerHTML="<b>📊</b>Sales";b.onclick=()=>go("salesView");nav.appendChild(b)}if(!on&&ex){ex.remove();if(!$("#salesView").classList.contains("hidden"))go("ordersView")}
+ nav.classList.toggle("t6",on)}
 </script></body></html>
