@@ -471,7 +471,7 @@ async function upd(fields,label){const o=CUR;if(!o)return false;const ks=Object.
 $("#detail").addEventListener("click",async e=>{const b=e.target.closest("button");if(!b||!CUR)return;
  if(b.dataset.st){if(b.dataset.st==="Cancelled"&&!confirm("Cancel order "+CUR.no+"?"))return;await upd({status:b.dataset.st},"Status: "+b.dataset.st)}
  else if(b.dataset.pay){await upd({payment:b.dataset.pay},"Payment: "+b.dataset.pay)}
- else if(b.dataset.pm){await upd({paymentMode:b.dataset.pm===CUR.paymentMode?"":b.dataset.pm},"Payment mode")}
+ else if(b.dataset.pm){const pm=b.dataset.pm===CUR.paymentMode?"":b.dataset.pm,f={paymentMode:pm},ai=$("#dAmt");if(pm&&autoAmt(CUR)&&(!ai||ai.value.trim()===""||Number(ai.value)===0)){f.amountReceived=CUR.total;if(ai)ai.value=CUR.total}await upd(f,"Payment mode"+(f.amountReceived!==undefined?" · received "+inr(CUR.total):""))}
  else if(b.id==="dSave"){const a=$("#dAmt").value;b.disabled=true;await upd({amountReceived:a===""?"":Number(a),assignedTo:$("#dAsg").value.trim(),internalNote:$("#dNote").value.trim()},"Saved")}
  else if(b.dataset.fill){const i=+b.dataset.fill,a=Number($("#fa"+i).value);if(!(a>0))return toast("Enter the price incl. GST");b.disabled=true;
   const r=await authApi({action:"fillPrice",orderNo:CUR.no,line:i,amount:a,weight:$("#fw"+i).value.trim()});if(!r.ok){b.disabled=false;return toast("Not saved: "+r.error)}
@@ -979,13 +979,13 @@ function salesTabUi(){const nav=$("#tabs"),ex=nav.querySelector('[data-v="salesV
  if(on&&!ex){const b=document.createElement("button");b.dataset.v="salesView";b.innerHTML="<b>📊</b>Sales";b.onclick=()=>go("salesView");nav.appendChild(b)}if(!on&&ex){ex.remove();if(!$("#salesView").classList.contains("hidden"))go("ordersView")}
  nav.classList.toggle("t6",on)}
 </script><script>
-/* bulk status (2026-11-06): tick orders on the Orders list (cards on phone, table on desktop), pick a status, Apply.
+/* bulk status + payment (2026-11-06): tick orders on the Orders list (cards on phone, table on desktop), pick a status, Apply.
    Uses updateOrder per order (3 at a time). Ticks only count for orders currently shown; changing filters drops hidden ones.
    Each order updates on screen at once; any the server refuses are put back and listed. */
 (function(){
  const SEL=new Set();let BUSY=false;
  const bar=document.createElement("div");bar.id="bulkBar";bar.className="hidden noprint";bar.setAttribute("role","region");bar.setAttribute("aria-label","Bulk status change");
- bar.innerHTML='<b id="bkN"></b><select id="bkSt" aria-label="New status"></select><button type="button" id="bkGo">Apply</button><button type="button" id="bkClr" class="ghost">Clear</button><p class="msg hidden" id="bkMsg"></p>';
+ bar.innerHTML='<b id="bkN"></b><select id="bkSt" aria-label="New status or payment"></select><button type="button" id="bkGo">Apply</button><button type="button" id="bkClr" class="ghost">Clear</button><p class="msg hidden" id="bkMsg"></p>';
  document.body.appendChild(bar);
  const all=document.createElement("label");all.id="bkAll";all.className="noprint";all.innerHTML='<input type="checkbox" id="bkAllCb"> <span>Select all shown</span>';
  $("#olist").before(all);
@@ -994,7 +994,7 @@ function salesTabUi(){const nav=$("#tabs"),ex=nav.querySelector('[data-v="salesV
   $("#bkN").textContent=n+" selected";const cb=$("#bkAllCb");cb.checked=!!vis.length&&vis.every(v=>SEL.has(v));cb.indeterminate=!cb.checked&&vis.some(v=>SEL.has(v));
   $("#bkAll").classList.toggle("hidden",!vis.length);$("#bkGo").disabled=BUSY||!n||!$("#bkSt").value;$("#bkClr").disabled=BUSY;
   document.querySelectorAll("#olist [data-o]").forEach(el=>{el.classList.toggle("bsel",SEL.has(el.dataset.o));const c=el.querySelector(".osel input");if(c)c.checked=SEL.has(el.dataset.o)})}
- function fillSt(){const sel=$("#bkSt"),cur=sel.value;sel.innerHTML='<option value="">Change status to…</option>'+(INIT&&INIT.statuses||[]).map(x=>`<option>${esc(x)}</option>`).join("");if(cur)sel.value=cur}
+ function fillSt(){const sel=$("#bkSt"),cur=sel.value;sel.innerHTML='<option value="">Change to…</option><optgroup label="Order status">'+(INIT&&INIT.statuses||[]).map(x=>`<option value="s|${esc(x)}">${esc(x)}</option>`).join("")+'</optgroup><optgroup label="Payment">'+(INIT&&INIT.payments||[]).map(x=>`<option value="p|${esc(x)}">Payment: ${esc(x)}</option>`).join("")+'</optgroup>';if(cur)sel.value=cur}
  const box=no=>`<label class="osel" data-stop="1" title="Select ${esc(no)}"><input type="checkbox" data-bk="${esc(no)}" aria-label="Select order ${esc(no)}"></label>`;
  const _rl=renderList;renderList=function(){_rl.apply(this,arguments);
   const tb=document.querySelector("#olist table.otab");
@@ -1008,22 +1008,26 @@ function salesTabUi(){const nav=$("#tabs"),ex=nav.querySelector('[data-v="salesV
  $("#bkAllCb").addEventListener("change",e=>{const vis=shown();if(e.target.checked)vis.forEach(v=>SEL.add(v));else vis.forEach(v=>SEL.delete(v));$("#bkMsg").classList.add("hidden");paintBar()});
  $("#bkSt").addEventListener("change",paintBar);
  $("#bkClr").onclick=()=>{SEL.clear();$("#bkSt").value="";$("#bkMsg").classList.add("hidden");paintBar()};
- $("#bkGo").onclick=async()=>{const st=$("#bkSt").value;if(!st||!SEL.size||BUSY)return;
-  const list=[...SEL].map(no=>ORD.find(o=>o.no===no)).filter(Boolean),todo=list.filter(o=>o.status!==st),same=list.length-todo.length;
-  if(!todo.length){$("#bkMsg").textContent="All selected orders are already "+st+".";$("#bkMsg").classList.remove("hidden");return}
-  if(!confirm(`Change ${todo.length} order${todo.length>1?"s":""} to "${st}"?`+(st==="Cancelled"?"\n\nThis cancels them.":"")))return;
+ $("#bkGo").onclick=async()=>{const v=$("#bkSt").value;if(!v||!SEL.size||BUSY)return;
+  const isP=v[0]==="p",st=v.slice(2),key=isP?"payment":"status",lbl=isP?"Payment: "+st:st,fillAmt=isP&&st==="Paid";
+  const list=[...SEL].map(no=>ORD.find(o=>o.no===no)).filter(Boolean),todo=list.filter(o=>o[key]!==st),same=list.length-todo.length;
+  if(!todo.length){$("#bkMsg").textContent="All selected orders are already "+lbl+".";$("#bkMsg").classList.remove("hidden");return}
+  if(!confirm(`Change ${todo.length} order${todo.length>1?"s":""} to "${lbl}"?`+(st==="Cancelled"&&!isP?"\n\nThis cancels them.":"")+(fillAmt?"\n\nAmount received will be set to the order value where it is blank (not for Price TBC orders).":"")))return;
   BUSY=true;const msg=$("#bkMsg");msg.classList.remove("hidden");let done=0;const bad=[];
-  const prev=new Map(todo.map(o=>[o.no,{status:o.status,handledBy:o.handledBy}]));
-  todo.forEach(o=>{o.status=st;o.handledBy=S.email});renderList();
+  const prev=new Map(todo.map(o=>[o.no,{[key]:o[key],handledBy:o.handledBy,amountReceived:o.amountReceived}]));
+  const F=new Map(todo.map(o=>{const f={[key]:st};if(fillAmt&&autoAmt(o))f.amountReceived=o.total;return[o.no,f]}));
+  todo.forEach(o=>{Object.assign(o,F.get(o.no));o.handledBy=S.email});renderList();
   const show=()=>{msg.textContent=`⏳ Updating ${done} of ${todo.length}…`};show();
-  const one=async o=>{let r;try{r=await authApi({action:"updateOrder",orderNo:o.no,status:st})}catch(e){r={ok:false,error:e&&e.message||"network_error"}}
-   if(!r||!r.ok){const p=prev.get(o.no);if(o.status===st){o.status=p.status;o.handledBy=p.handledBy}bad.push(o.no+" ("+((r&&(r.message||r.error))||"error")+")")}done++;show()};
+  const one=async o=>{let r;try{r=await authApi({action:"updateOrder",orderNo:o.no,...F.get(o.no)})}catch(e){r={ok:false,error:e&&e.message||"network_error"}}
+   if(!r||!r.ok){if(o[key]===st)Object.assign(o,prev.get(o.no));bad.push(o.no+" ("+((r&&(r.message||r.error))||"error")+")")}done++;show()};
   const q=[...todo];await Promise.all([0,1,2].map(async()=>{while(q.length)await one(q.shift())}));
   BUSY=false;const okN=todo.length-bad.length;
   if(!bad.length)SEL.clear();else{const keep=new Set(bad.map(b=>b.split(" ")[0]));[...SEL].forEach(v=>{if(!keep.has(v))SEL.delete(v)})}
-  msg.textContent=(okN?`✓ ${okN} order${okN>1?"s":""} set to ${st}.`:"")+(same?` ${same} already ${st}.`:"")+(bad.length?` ✗ Not saved (still ticked): ${bad.join(", ")}`:"");
+  msg.textContent=(okN?`✓ ${okN} order${okN>1?"s":""} set to ${lbl}.`:"")+(same?` ${same} already ${lbl}.`:"")+(bad.length?` ✗ Not saved (still ticked): ${bad.join(", ")}`:"");
   msg.classList.toggle("hidden",!bad.length);if(!bad.length)$("#bkSt").value="";
-  renderList();toast(bad.length?`${okN} updated, ${bad.length} not saved`:`Status: ${st} ✓ (${okN})`)};
+  renderList();toast(bad.length?`${okN} updated, ${bad.length} not saved`:`${lbl} ✓ (${okN})`)};
+ /* amount auto-fill: blank/0 amount, a real order value, no Price-TBC lines */
+ window.autoAmt=o=>!!o&&(o.amountReceived===null||o.amountReceived===undefined||o.amountReceived===""||Number(o.amountReceived)===0)&&!o.tbc&&Number(o.total)>0;
  if(typeof INIT!=="undefined"&&INIT&&ORD)renderList();
 })();
 </script>
