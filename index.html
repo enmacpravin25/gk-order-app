@@ -94,7 +94,19 @@ h3{color:var(--maroon);margin:14px 0 6px;font-size:16px}
 #salesView .seg button{min-height:40px}#salesView .scap{font-size:12px;color:#5a4630;margin:6px 0 0}.skpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:6px 0}.skpi div{background:var(--plum);color:var(--cream);border-radius:10px;padding:8px;text-align:center;font-size:12px;min-width:0}.skpi b{display:block;font-size:18px;color:var(--gold);overflow-wrap:anywhere}.skpi div:first-child{grid-column:1/-1}@media(min-width:900px){.skpi{grid-template-columns:repeat(5,minmax(0,1fr))}.skpi div:first-child{grid-column:auto}.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sgrid>.card{margin:0}}
 .stab{width:100%;border-collapse:collapse;font-size:13px}.stab th,.stab td{padding:6px 4px;border-bottom:1px solid #eadfc8;text-align:left}.stab .n{text-align:right;white-space:nowrap}.stab tfoot td{font-weight:700;border-top:2px solid var(--gold)}.snote{font-size:12px;color:#7a5a3a;margin:4px 0}#sRange.hidden{display:none!important}
 @media print{#salesView .skpi div{background:#fff;color:#000;border:1px solid #999}#salesView .skpi b{color:#000}}
-</style></head><body>
+</style><style id="bulkCss">
+.osel{display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;margin:-8px 2px -8px -8px;cursor:pointer;flex:0 0 auto}
+.osel input,#bkAll input,.otab .osel input{width:22px;height:22px;margin:0;accent-color:var(--plum);cursor:pointer}
+.card.oc .top{display:flex;align-items:center}.card.oc .top .ono{flex:1 1 auto}.card.oc.bsel{outline:3px solid var(--gold);outline-offset:-1px;background:#fff8e7}
+.otab tr.oc.bsel td{background:#fff3d6}.otab td.selc,.otab th.selc{width:40px;text-align:center;padding:0}
+#bkAll{display:inline-flex;align-items:center;gap:8px;min-height:40px;font-size:14px;color:var(--plum);cursor:pointer;margin:6px 0 0}
+#bulkBar{position:fixed;left:0;right:0;bottom:calc(66px + env(safe-area-inset-bottom));z-index:31;background:#fff;border-top:3px solid var(--gold);box-shadow:0 -4px 14px rgba(0,0,0,.15);padding:8px 10px;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;align-items:center}
+#bulkBar.hidden{display:none}#bulkBar b{color:var(--plum);white-space:nowrap}#bulkBar select{min-height:42px;min-width:0;width:100%}
+#bulkBar button{min-height:42px;padding:6px 12px;white-space:nowrap}#bulkBar .msg{grid-column:1/-1;margin:0;font-size:13px}
+body.bulk-on #olist{padding-bottom:110px}body.bulk-on .toast{bottom:calc(150px + env(safe-area-inset-bottom))}
+@media (min-width:900px){#bulkBar{left:50%;transform:translateX(-50%);max-width:760px;border:2px solid var(--gold);border-radius:12px}}
+</style>
+</head><body>
 <div id="mockbar" class="mock hidden">DEMO MODE – fake data, nothing is saved</div>
 <header><img src="logo.webp" alt="GK"><div><h1>GK Orders</h1><small id="whoami">House of Seerbakshanam GK</small></div><span class="sp"></span><button id="lo" class="hidden">Log out</button></header>
 
@@ -966,4 +978,53 @@ function salesTabUi(){const nav=$("#tabs"),ex=nav.querySelector('[data-v="salesV
  const SH={prodView:"Prod.",delView:"Deliver"};$$("nav.tabs button").forEach(b=>{if(SH[b.dataset.v]&&!b.querySelector(".lf")){const t=b.lastChild.textContent;b.lastChild.remove();b.insertAdjacentHTML("beforeend",`<span class="lf">${t}</span><span class="ls">${SH[b.dataset.v]}</span>`)}});
  if(on&&!ex){const b=document.createElement("button");b.dataset.v="salesView";b.innerHTML="<b>📊</b>Sales";b.onclick=()=>go("salesView");nav.appendChild(b)}if(!on&&ex){ex.remove();if(!$("#salesView").classList.contains("hidden"))go("ordersView")}
  nav.classList.toggle("t6",on)}
-</script></body></html>
+</script><script>
+/* bulk status (2026-11-06): tick orders on the Orders list (cards on phone, table on desktop), pick a status, Apply.
+   Uses updateOrder per order (3 at a time). Ticks only count for orders currently shown; changing filters drops hidden ones.
+   Each order updates on screen at once; any the server refuses are put back and listed. */
+(function(){
+ const SEL=new Set();let BUSY=false;
+ const bar=document.createElement("div");bar.id="bulkBar";bar.className="hidden noprint";bar.setAttribute("role","region");bar.setAttribute("aria-label","Bulk status change");
+ bar.innerHTML='<b id="bkN"></b><select id="bkSt" aria-label="New status"></select><button type="button" id="bkGo">Apply</button><button type="button" id="bkClr" class="ghost">Clear</button><p class="msg hidden" id="bkMsg"></p>';
+ document.body.appendChild(bar);
+ const all=document.createElement("label");all.id="bkAll";all.className="noprint";all.innerHTML='<input type="checkbox" id="bkAllCb"> <span>Select all shown</span>';
+ $("#olist").before(all);
+ const shown=()=>[...document.querySelectorAll("#olist [data-o]")].map(e=>e.dataset.o).filter((v,i,a)=>a.indexOf(v)===i);
+ function paintBar(){const n=SEL.size,vis=shown();bar.classList.toggle("hidden",!n&&!BUSY);document.body.classList.toggle("bulk-on",!!n||BUSY);
+  $("#bkN").textContent=n+" selected";const cb=$("#bkAllCb");cb.checked=!!vis.length&&vis.every(v=>SEL.has(v));cb.indeterminate=!cb.checked&&vis.some(v=>SEL.has(v));
+  $("#bkAll").classList.toggle("hidden",!vis.length);$("#bkGo").disabled=BUSY||!n||!$("#bkSt").value;$("#bkClr").disabled=BUSY;
+  document.querySelectorAll("#olist [data-o]").forEach(el=>{el.classList.toggle("bsel",SEL.has(el.dataset.o));const c=el.querySelector(".osel input");if(c)c.checked=SEL.has(el.dataset.o)})}
+ function fillSt(){const sel=$("#bkSt"),cur=sel.value;sel.innerHTML='<option value="">Change status to…</option>'+(INIT&&INIT.statuses||[]).map(x=>`<option>${esc(x)}</option>`).join("");if(cur)sel.value=cur}
+ const box=no=>`<label class="osel" data-stop="1" title="Select ${esc(no)}"><input type="checkbox" data-bk="${esc(no)}" aria-label="Select order ${esc(no)}"></label>`;
+ const _rl=renderList;renderList=function(){_rl.apply(this,arguments);
+  const tb=document.querySelector("#olist table.otab");
+  if(tb){const hr=tb.querySelector("thead tr");if(hr&&!hr.querySelector(".selc")){const th=document.createElement("th");th.className="selc";th.innerHTML='<span class="sr" style="position:absolute;left:-9999px">Select</span>';hr.prepend(th)}
+   tb.querySelectorAll("tbody tr.oc[data-o]").forEach(tr=>{if(tr.querySelector(".osel"))return;const td=document.createElement("td");td.className="selc";td.dataset.stop="1";td.innerHTML=box(tr.dataset.o);tr.prepend(td)})}
+  else document.querySelectorAll("#olist .card.oc[data-o]").forEach(c=>{const t=c.querySelector(".top");if(!t||t.querySelector(".osel"))return;t.insertAdjacentHTML("afterbegin",box(c.dataset.o))});
+  if(!BUSY){const vis=new Set(shown());[...SEL].forEach(v=>{if(!vis.has(v))SEL.delete(v)})}
+  if(!$("#bkSt").options.length)fillSt();paintBar()};
+ $("#olist").addEventListener("change",e=>{const c=e.target.closest("input[data-bk]");if(!c)return;c.checked?SEL.add(c.dataset.bk):SEL.delete(c.dataset.bk);$("#bkMsg").classList.add("hidden");paintBar()});
+ $("#olist").addEventListener("click",e=>{if(e.target.closest(".osel"))e.stopPropagation()},true);
+ $("#bkAllCb").addEventListener("change",e=>{const vis=shown();if(e.target.checked)vis.forEach(v=>SEL.add(v));else vis.forEach(v=>SEL.delete(v));$("#bkMsg").classList.add("hidden");paintBar()});
+ $("#bkSt").addEventListener("change",paintBar);
+ $("#bkClr").onclick=()=>{SEL.clear();$("#bkSt").value="";$("#bkMsg").classList.add("hidden");paintBar()};
+ $("#bkGo").onclick=async()=>{const st=$("#bkSt").value;if(!st||!SEL.size||BUSY)return;
+  const list=[...SEL].map(no=>ORD.find(o=>o.no===no)).filter(Boolean),todo=list.filter(o=>o.status!==st),same=list.length-todo.length;
+  if(!todo.length){$("#bkMsg").textContent="All selected orders are already "+st+".";$("#bkMsg").classList.remove("hidden");return}
+  if(!confirm(`Change ${todo.length} order${todo.length>1?"s":""} to "${st}"?`+(st==="Cancelled"?"\n\nThis cancels them.":"")))return;
+  BUSY=true;const msg=$("#bkMsg");msg.classList.remove("hidden");let done=0;const bad=[];
+  const prev=new Map(todo.map(o=>[o.no,{status:o.status,handledBy:o.handledBy}]));
+  todo.forEach(o=>{o.status=st;o.handledBy=S.email});renderList();
+  const show=()=>{msg.textContent=`⏳ Updating ${done} of ${todo.length}…`};show();
+  const one=async o=>{let r;try{r=await authApi({action:"updateOrder",orderNo:o.no,status:st})}catch(e){r={ok:false,error:e&&e.message||"network_error"}}
+   if(!r||!r.ok){const p=prev.get(o.no);if(o.status===st){o.status=p.status;o.handledBy=p.handledBy}bad.push(o.no+" ("+((r&&(r.message||r.error))||"error")+")")}done++;show()};
+  const q=[...todo];await Promise.all([0,1,2].map(async()=>{while(q.length)await one(q.shift())}));
+  BUSY=false;const okN=todo.length-bad.length;
+  if(!bad.length)SEL.clear();else{const keep=new Set(bad.map(b=>b.split(" ")[0]));[...SEL].forEach(v=>{if(!keep.has(v))SEL.delete(v)})}
+  msg.textContent=(okN?`✓ ${okN} order${okN>1?"s":""} set to ${st}.`:"")+(same?` ${same} already ${st}.`:"")+(bad.length?` ✗ Not saved (still ticked): ${bad.join(", ")}`:"");
+  msg.classList.toggle("hidden",!bad.length);if(!bad.length)$("#bkSt").value="";
+  renderList();toast(bad.length?`${okN} updated, ${bad.length} not saved`:`Status: ${st} ✓ (${okN})`)};
+ if(typeof INIT!=="undefined"&&INIT&&ORD)renderList();
+})();
+</script>
+</body></html>
