@@ -130,6 +130,7 @@ button.ei-b[data-erm]{min-height:38px;padding:4px 12px;font-size:14px}
 #eCfg #eaNote,#eCfg #ecg{min-height:38px}#eCfg .qn{gap:4px;margin-top:4px}#eCfg .qn button{min-height:32px;padding:2px 9px;font-size:13px}
 #eCfg #eaAdd,#eCfg #eaCancel{min-height:40px}#eCfg #eaAdd{flex:1 1 auto}#eCfg #eaCancel{flex:0 0 auto;min-width:76px;padding:0 12px}#eCfg .row #ecAmt{flex:0 1 auto}
 </style>
+<style id="svCss">#savedBox{position:fixed;left:0;right:0;top:0;bottom:0;z-index:45;background:var(--cream);padding:18px 14px calc(80px + env(safe-area-inset-bottom));overflow:auto;display:flex;align-items:flex-start;justify-content:center}#savedBox.hidden{display:none}#savedBox .card{width:100%;max-width:520px;margin-top:8vh;text-align:center;padding:22px 16px}#savedBox h2{margin:6px 0 4px;color:var(--plum);font-size:22px}#savedBox .svAmt{margin:0 0 12px;color:var(--mut)}#savedBox .svOk{width:56px;height:56px;border-radius:50%;background:var(--plum);color:var(--gold);font-size:30px;line-height:56px;margin:0 auto}#savedBox .svWait{display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px}#savedBox .svSpin{width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--plum);border-radius:50%;animation:svs .8s linear infinite}@keyframes svs{to{transform:rotate(360deg)}}#savedBox .svBtns{gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}#savedBox .svBtns button{min-height:44px;padding:0 14px}</style>
 </head><body>
 <div id="mockbar" class="mock hidden">DEMO MODE – fake data, nothing is saved</div>
 <header><img src="logo.webp" alt="GK"><div><h1>GK Orders</h1><small id="whoami">House of Seerbakshanam GK</small></div><span class="sp"></span><button id="lo" class="hidden">Log out</button></header>
@@ -569,7 +570,17 @@ $("#nSave").onclick=async()=>{const m=(t,e)=>{$("#nMsg").textContent=t;$("#nMsg"
  if(!o.lines.length)return m("Add at least one item.",1);   /* only check that blocks saving; all other fields optional, saved as entered */
  $("#nSave").disabled=true;m("Saving…");const r=await authApi(o);$("#nSave").disabled=false;
  if(!r.ok)return m("Not saved: "+r.error,1);m("Saved as "+r.orderNo+" · "+(r.tbc&&r.tbc===o.lines.length?"Price TBC":inr(r.total)+" incl. GST"));toast("Order "+r.orderNo+" saved");
- NEW.cart=[];NEW.edit=null;NEW.sel=null;renderCfg();["#nName","#nPhone","#nAddr","#nArea","#nPin","#nSlot","#nNotes","#nEmail"].forEach(s=>$(s).value="");renderCart();await load();if(ORD.some(x=>x.no===r.orderNo)){go("ordersView");openDetail(r.orderNo)}};
+ NEW.cart=[];NEW.edit=null;NEW.sel=null;renderCfg();["#nName","#nPhone","#nAddr","#nArea","#nPin","#nSlot","#nNotes","#nEmail"].forEach(s=>$(s).value="");renderCart();savedOpen(r,o)};
+/* saved panel (2026-11-06): shown at once after Save order so the screen never sits blank while the list reloads */
+async function savedOpen(r,o){window.scrollTo(0,0);const box=$("#savedBox"),amt=r.tbc&&r.tbc===o.lines.length?"Price TBC":inr(r.total)+" incl. GST";
+ const show=(h)=>{box.innerHTML=`<div class="card"><div class="svOk">✓</div><h2>Order ${esc(r.orderNo)} saved</h2><p class="svAmt">${esc(o.name||"(no name)")} · ${amt}</p>${h}</div>`;box.classList.remove("hidden");document.body.classList.add("sv-open")};
+ const hide=()=>{box.classList.add("hidden");document.body.classList.remove("sv-open")};
+ const tryOpen=async()=>{show(`<p class="msg svWait"><span class="svSpin" aria-hidden="true"></span> Opening the order…</p>`);
+  let okL=true;try{const lr=await authApi({action:"listOrders"});if(lr&&lr.ok){ORD=lr.orders;INIT.today=lr.today||INIT.today}else okL=false}catch(e){okL=false}
+  if(okL&&ORD.some(x=>x.no===r.orderNo)){go("ordersView");renderList();hide();openDetail(r.orderNo);return}
+  show(`<p class="msg err">${okL?"Saved, but it is not in the list yet.":"Saved, but the order list could not be loaded (network)."}</p><div class="row svBtns"><button type="button" id="svRetry" class="gold">Try again</button><button type="button" id="svOrders" class="ghost">Go to Orders</button><button type="button" id="svNew" class="ghost">New order</button></div>`);
+  $("#svRetry").onclick=tryOpen;$("#svOrders").onclick=()=>{hide();go("ordersView");load()};$("#svNew").onclick=()=>{hide();load()}};
+ await tryOpen()}
 
 /* ---------- production + deliveries ---------- */
 ["#pDate","#pBranch"].forEach(s=>$(s).addEventListener("input",renderProd));["#dDate","#dBranch"].forEach(s=>$(s).addEventListener("input",renderDel));try{$("#kStat").value=localStorage.getItem("gkPackGroup")||"open"}catch(e){}
@@ -1098,4 +1109,5 @@ function salesTabUi(){const nav=$("#tabs"),ex=nav.querySelector('[data-v="salesV
  document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#eBox .ei-b"))paint()});
 })();
 </script>
+<div id="savedBox" class="hidden noprint" role="status" aria-live="polite"></div>
 </body></html>
