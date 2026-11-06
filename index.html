@@ -106,6 +106,30 @@ h3{color:var(--maroon);margin:14px 0 6px;font-size:16px}
 body.bulk-on #olist{padding-bottom:110px}body.bulk-on .toast{bottom:calc(150px + env(safe-area-inset-bottom))}
 @media (min-width:900px){#bulkBar{left:50%;transform:translateX(-50%);max-width:760px;border:2px solid var(--gold);border-radius:12px}}
 </style>
+<style id="eiCss">
+/* edit items: collapsed item rows */
+.eihd{display:flex;align-items:center;gap:6px;border:1px solid var(--line,#e6d9c6);border-radius:10px;background:#fff;margin:6px 0 0;padding:0 4px 0 0}
+.eihd.open{border-color:var(--plum);border-bottom-left-radius:0;border-bottom-right-radius:0;background:#fbf3ff}
+.eitg{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:8px;background:transparent!important;color:inherit!important;border:0!important;min-height:48px;padding:6px 10px;text-align:left;font:inherit;cursor:pointer;box-shadow:none!important}
+.eitg .eit{flex:1 1 auto;min-width:0}.eitg .eit b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.eitg .eit small{display:block;color:var(--mut,#6b5d4f);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eitg svg{flex:0 0 auto;width:18px;height:18px;transition:transform .15s}.eihd.open .eitg svg{transform:rotate(90deg)}
+.eihd .chk{flex:0 0 auto;margin:0;font-size:12px;display:inline-flex;align-items:center;gap:4px;min-height:40px;padding:0 4px}
+.ei-b{margin-left:6px!important;margin-right:6px!important}.ei-b.ei-last{margin-bottom:10px!important}
+.ei-b.ei-shut{display:none!important}
+.ei-b.grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;margin-top:8px!important}.ei-b.grid3>div:first-child{grid-column:1/-1}
+.ei-b.grid3>div:first-child>b,.ei-b.grid3>div:first-child>br,.ei-b.grid3>div:first-child>small{display:none}
+.ei-b.grid3 .ewrow .chk{display:none}.ei-b .seg.ewt{display:flex;flex-wrap:wrap;gap:4px}.ei-b .seg.ewt button{flex:0 0 auto;width:auto;min-height:36px;padding:4px 10px;font-size:14px}
+.ei-b .qn{gap:4px}.ei-b .qn button{min-height:32px;padding:2px 9px;font-size:13px}
+button.ei-b[data-erm]{min-height:38px;padding:4px 12px;font-size:14px}
+/* edit items: compact add-item */
+#eBox h3{margin:14px 0 4px;font-size:16px}
+#eBox .gaddrow{flex-wrap:nowrap;margin-top:4px}#eBox .gaddrow #eaQ{flex:1 1 auto;min-width:0;min-height:42px}#eBox .gplus{min-width:42px;min-height:42px;font-size:18px}
+#eCfg .cfg{padding:8px 10px}#eCfg label{margin-top:6px;font-size:13px}
+#eCfg .seg{display:flex;flex-wrap:wrap;gap:4px}#eCfg .seg button{flex:0 0 auto;width:auto;min-height:36px;padding:4px 10px;font-size:14px}
+#eCfg .row{gap:6px;align-items:center}#eCfg .row button.ghost{flex:0 0 44px;min-height:36px;padding:0}#eCfg #ecq{flex:0 0 72px;max-width:72px;min-height:36px}
+#eCfg #eaNote,#eCfg #ecg{min-height:38px}#eCfg .qn{gap:4px;margin-top:4px}#eCfg .qn button{min-height:32px;padding:2px 9px;font-size:13px}
+#eCfg #eaAdd,#eCfg #eaCancel{min-height:40px}#eCfg #eaAdd{flex:1 1 auto}#eCfg #eaCancel{flex:0 0 auto;min-width:76px;padding:0 12px}#eCfg .row #ecAmt{flex:0 1 auto}
+</style>
 </head><body>
 <div id="mockbar" class="mock hidden">DEMO MODE – fake data, nothing is saved</div>
 <header><img src="logo.webp" alt="GK"><div><h1>GK Orders</h1><small id="whoami">House of Seerbakshanam GK</small></div><span class="sp"></span><button id="lo" class="hidden">Log out</button></header>
@@ -545,7 +569,7 @@ $("#nSave").onclick=async()=>{const m=(t,e)=>{$("#nMsg").textContent=t;$("#nMsg"
  if(!o.lines.length)return m("Add at least one item.",1);   /* only check that blocks saving; all other fields optional, saved as entered */
  $("#nSave").disabled=true;m("Saving…");const r=await authApi(o);$("#nSave").disabled=false;
  if(!r.ok)return m("Not saved: "+r.error,1);m("Saved as "+r.orderNo+" · "+(r.tbc&&r.tbc===o.lines.length?"Price TBC":inr(r.total)+" incl. GST"));toast("Order "+r.orderNo+" saved");
- NEW.cart=[];NEW.edit=null;NEW.sel=null;renderCfg();["#nName","#nPhone","#nAddr","#nArea","#nPin","#nSlot","#nNotes","#nEmail"].forEach(s=>$(s).value="");renderCart();await load()};
+ NEW.cart=[];NEW.edit=null;NEW.sel=null;renderCfg();["#nName","#nPhone","#nAddr","#nArea","#nPin","#nSlot","#nNotes","#nEmail"].forEach(s=>$(s).value="");renderCart();await load();if(ORD.some(x=>x.no===r.orderNo)){go("ordersView");openDetail(r.orderNo)}};
 
 /* ---------- production + deliveries ---------- */
 ["#pDate","#pBranch"].forEach(s=>$(s).addEventListener("input",renderProd));["#dDate","#dBranch"].forEach(s=>$(s).addEventListener("input",renderDel));try{$("#kStat").value=localStorage.getItem("gkPackGroup")||"open"}catch(e){}
@@ -1035,6 +1059,43 @@ function salesTabUi(){const nav=$("#tabs"),ex=nav.querySelector('[data-v="salesV
  /* amount auto-fill: blank/0 amount, a real order value, no Price-TBC lines */
  window.autoAmt=o=>!!o&&(o.amountReceived===null||o.amountReceived===undefined||o.amountReceived===""||Number(o.amountReceived)===0)&&!o.tbc&&Number(o.total)>0;
  if(typeof INIT!=="undefined"&&INIT&&ORD)renderList();
+})();
+</script>
+<script>
+/* edit items accordion (2026-11-06): one summary line per item; tap to open (one at a time). Nodes are not moved
+   (except the combo tick) – the item's controls just get .ei-b and are hidden when shut – so existing handlers keep working. */
+(function(){
+ let OPEN=-1,FOR=null;
+ const CHEV='<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg>';
+ const val=(sel)=>{const e=document.querySelector(sel);return e?e.value:""};
+ function sumTxt(i){const l=EDIT&&EDIT[i];if(!l)return["",""];
+  const q=val(`#eBox [data-eq="${i}"]`)||l.qty,aIn=val(`#eBox [data-ea="${i}"]`),note=val(`#eBox [data-en="${i}"]`);
+  const size=l.breakup?comboBrkTxt(l.breakup):String(l.unit||"");
+  const amt=aIn!==""?inr(+aIn):l.tbc?"Price TBC":inr(l.amount);
+  return[(l.breakup?"🎁 ":"")+l.item,(size?size:"")+(+q>1||l.breakup?" × "+q:"")+" · "+amt+(note?" · 📝 "+note:"")]}
+ function paint(){const card=document.querySelector("#eBox .card");if(!card)return;
+  card.querySelectorAll(".eihd").forEach(h=>{const i=+h.dataset.eh,op=i===OPEN;h.classList.toggle("open",op);h.querySelector(".eitg").setAttribute("aria-expanded",String(op));
+   const[t,sub]=sumTxt(i);h.querySelector(".eit b").textContent=t;h.querySelector(".eit small").textContent=sub});
+  card.querySelectorAll(".ei-b").forEach(e=>e.classList.toggle("ei-shut",+e.dataset.eg!==OPEN))}
+ function decorate(){const card=document.querySelector("#eBox .card");if(!card||!EDIT)return;
+  if(FOR!==EDIT){FOR=EDIT;OPEN=-1}if(OPEN>=EDIT.length)OPEN=-1;
+  let g=-1,last=null;const groups={};
+  for(const el of [...card.children]){
+   if(el.id==="eBar"||el.classList.contains("eihd"))continue;
+   if(el.tagName==="H3"||el.querySelector&&el.querySelector("#eaQ"))break;
+   const q=el.matches&&el.matches(".grid3")&&el.querySelector("[data-eq]");
+   if(q){g=+q.dataset.eq;(groups[g]=[]).push(el)}else if(g>=0)groups[g].push(el)}
+  Object.keys(groups).forEach(k=>{const i=+k,els=groups[k];els.forEach((e,j)=>{e.classList.add("ei-b");e.dataset.eg=i;e.classList.toggle("ei-last",j===els.length-1)});
+   const h=document.createElement("div");h.className="eihd";h.dataset.eh=i;
+   h.innerHTML=`<button type="button" class="eitg" data-eh="${i}" aria-expanded="false"><span class="eit"><b></b><small></small></span>${CHEV}</button>`;
+   els[0].before(h);
+   const chk=els[0].querySelector("label.chk");if(chk&&!chk.contains(document.activeElement))h.appendChild(chk)});
+  paint()}
+ const _re=renderEdit;renderEdit=function(){_re.apply(this,arguments);try{decorate()}catch(err){console.error(err)}};
+ document.addEventListener("click",e=>{if(!e.target.closest||!e.target.closest("#eBox"))return;const t=e.target.closest(".eitg");if(t){const i=+t.dataset.eh;OPEN=OPEN===i?-1:i;paint();
+   const h=t.closest(".eihd");if(OPEN===i&&h&&h.scrollIntoView)h.scrollIntoView({block:"nearest"});return}
+  const rm=e.target.closest("[data-erm]");if(rm){const i=+rm.dataset.erm;OPEN=OPEN===i?-1:OPEN>i?OPEN-1:OPEN}},true);
+ document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#eBox .ei-b"))paint()});
 })();
 </script>
 </body></html>
