@@ -317,7 +317,7 @@ let RANGE="all";const CLOSED=["Delivered","Cancelled"],GROUPS=[["open","Open"],[
 let GROUP=(()=>{try{const g=localStorage.getItem("gkOrdersGroup");return GROUPS.some(x=>x[0]===g)?g:"open"}catch(e){return"open"}})();
 const inGroup=(o,g)=>g==="all"?true:g==="open"?!CLOSED.includes(o.status):o.status===g;
 function renderGrp(base){$("#grp").innerHTML=GROUPS.map(([k,t])=>`<button type="button" data-g="${k}" class="${k===GROUP?"on":""}" aria-pressed="${k===GROUP}">${t}<i>${base.filter(o=>inGroup(o,k)).length}</i></button>`).join("");$("#fStatus").disabled=GROUP!=="open"}
-$("#grp").onclick=e=>{const b=e.target.closest("button");if(!b)return;GROUP=b.dataset.g;try{localStorage.setItem("gkOrdersGroup",GROUP)}catch(x){}if(GROUP!=="open")$("#fStatus").value="";renderList()};const RANGES=[["today","Today"],["tomorrow","Tomorrow"],["week","Next 7 days"],["custom","Date ▾"],["all","All"]];
+$("#grp").onclick=e=>{const b=e.target.closest("button");if(!b)return;GROUP=b.dataset.g;try{localStorage.setItem("gkOrdersGroup",GROUP)}catch(x){}if(GROUP!=="open")$("#fStatus").value="";renderList()};const RANGES=[["all","All"],["today","Today"],["tomorrow","Tomorrow"],["week","Next 7 days"],["custom","Date ▾"]];
 function setupFilters(){$("#rng").innerHTML=RANGES.map(([k,t])=>`<button data-r="${k}" class="${k===RANGE?"on":""}">${t}</button>`).join("");
  $("#fStatus").innerHTML='<option value="">All open statuses</option>'+INIT.statuses.filter(s=>!CLOSED.includes(s)).map(s=>`<option>${esc(s)}</option>`).join("");
  $("#fSource").innerHTML='<option value="">All sources</option>'+INIT.sources.map(s=>`<option>${esc(s)}</option>`).join("");
